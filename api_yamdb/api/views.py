@@ -3,8 +3,8 @@ from .permissions import IsRoleAdmin
 from rest_framework import viewsets, filters
 from rest_framework.views import APIView
 from reviews.models import User
-from reviews.serializers import AdminUserSerializer, SignupSerializer
-from reviews.serializers import TokenSerializer, UserSerializer
+from .serializers import AdminUserSerializer, SignupSerializer
+from .serializers import TokenSerializer, UserSerializer
 from reviews.uttils import send_confirmation_code
 from rest_framework.response import Response
 from rest_framework import filters, status, viewsets
