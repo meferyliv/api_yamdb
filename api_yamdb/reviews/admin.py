@@ -1,6 +1,5 @@
 from django.contrib import admin
-
-from .models import Category, Genre, Title
+from .models import Category, Genre, Title, User
 from api_yamdb.settings import EMPTY
 
 
@@ -34,3 +33,6 @@ class TitleAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('year',)
     empty_value_display = EMPTY
+
+
+admin.site.register(User)
