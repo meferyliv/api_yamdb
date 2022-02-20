@@ -45,7 +45,6 @@ class TokenSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     username = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
     role = serializers.StringRelatedField(read_only=True)
@@ -62,8 +61,8 @@ class UserSerializer(serializers.ModelSerializer):
                 'Имя пользователя "me" не разрешено.'
             )
         return value
-      
-      
+
+
 class CategorySerializer(serializers.ModelSerializer):
     slug = serializers.CharField(
         allow_blank=False,

@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Category, Genre, Title, User
+
 from api_yamdb.settings import EMPTY
+from .models import Category, Genre, Title, User
 
 
 @admin.register(Category)
