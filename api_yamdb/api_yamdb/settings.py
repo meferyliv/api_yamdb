@@ -122,6 +122,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'tensafang@gmail.com'
 EMAIL_HOST_PASSWORD = '723747aaa'

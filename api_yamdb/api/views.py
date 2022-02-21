@@ -84,7 +84,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         category, genres = serializer.check_category_genre(
             self.request.data.get('category'),
-            self.request.data.getlist('genre')
+            self.request.data.get('genre')
         )
         if category:
             serializer.save(category=category[0], genre=genres)
@@ -94,7 +94,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         category, genres = serializer.check_category_genre(
             self.request.data.get('category'),
-            self.request.data.getlist('genre')
+            self.request.data.get('genre')
         )
         if category:
             serializer.save(category=category[0])
