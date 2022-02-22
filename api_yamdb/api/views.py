@@ -14,9 +14,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import Category, Genre, Title, User
 from reviews.uttils import send_confirmation_code
+from .filters import TitleFilter
 from .permissions import IsAdmin, IsRoleAdmin
 from .serializers import (AdminUserSerializer, CategorySerializer,
-                          GenreSerializer, SignupSerializer, TitleSerializer,
+                          GenreSerializer, SignupSerializer,
+                          TitleReadSerializer, TitleWriteSerializer,
                           TokenSerializer, UserSerializer)
 
 
@@ -60,47 +62,14 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     permission_classes = (IsAuthenticatedOrReadOnly, IsAdmin)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('year',)
+    filterset_class = TitleFilter
 
-    def get_queryset(self):
-        queryset = self.queryset
-        if self.request.query_params.get('name'):
-            queryset = queryset.filter(
-                name__icontains=self.request.query_params.get('name')
-            )
-        if self.request.query_params.get('category'):
-            queryset = queryset.filter(
-                category__slug=self.request.query_params.get('category')
-            )
-        if self.request.query_params.get('genre'):
-            queryset = queryset.filter(
-                genre__slug=self.request.query_params.get('genre')
-            )
-        return queryset
-
-    def perform_create(self, serializer):
-        category, genres = serializer.check_category_genre(
-            self.request.data.get('category'),
-            self.request.data.get('genre')
-        )
-        if category:
-            serializer.save(category=category[0], genre=genres)
-        else:
-            serializer.save(genre=genres)
-
-    def perform_update(self, serializer):
-        category, genres = serializer.check_category_genre(
-            self.request.data.get('category'),
-            self.request.data.get('genre')
-        )
-        if category:
-            serializer.save(category=category[0])
-        title = get_object_or_404(Title, pk=self.kwargs.get('pk'))
-        for genre in genres:
-            title.genre.add(get_object_or_404(Genre, slug=genre))
+    def get_serializer_class(self):
+        if self.request.method in ('POST', 'PATCH', 'DELETE'):
+            return TitleWriteSerializer
+        return TitleReadSerializer
 
 
 class UsersViewSet(viewsets.ModelViewSet):
