@@ -82,7 +82,6 @@ class Title(models.Model):
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
-        #ordering = ('-name',)
 
     def __str__(self):
         return self.name[:20]
@@ -92,21 +91,25 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        verbose_name='Отзыв по произведению',
     )
-    text = models.TextField()
+    text = models.TextField('Текст отзыва')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        verbose_name='Автор отзыва',
     )
-    score = models.IntegerField()
+    score = models.IntegerField('Оценка произведения')
     pub_date = models.DateTimeField(
         'Дата публикации',
-        auto_now_add=True
+        auto_now_add=True,
     )
 
     class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
                 fields=['author', 'title'],
@@ -115,25 +118,31 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return self.text
+        return self.text[:20]
 
 
 class Comment(models.Model):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='comments',
+        verbose_name='Комментарий к отзыву',
     )
-    text = models.TextField()
+    text = models.TextField('Текст комментария')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='comments',
+        verbose_name='Автор комментария',
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
-        auto_now_add=True
+        auto_now_add=True,
     )
 
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
     def __str__(self):
-        return self.text
+        return self.text[:20]
