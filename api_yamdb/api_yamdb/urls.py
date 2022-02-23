@@ -3,7 +3,6 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),

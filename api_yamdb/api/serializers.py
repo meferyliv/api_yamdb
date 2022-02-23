@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-
-from reviews.models import Category, Genre, Title, User
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -87,6 +86,10 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(many=False, read_only=True)
+    rating = serializers.FloatField(
+        source='reviews__score__avg',
+        read_only=True
+    )
 
     class Meta:
         fields = '__all__'
@@ -104,3 +107,44 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
         model = Title
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+        default=serializers.CurrentUserDefault()
+    )
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date',)
+
+    def validate(self, data):
+        if self.context.get('request').method != 'POST':
+            return data
+        reviewer = self.context.get('request').user
+        title_id = self.context['view'].kwargs['title_id']
+        if Review.objects.filter(author=reviewer, title__id=title_id).exists():
+            raise serializers.ValidationError(
+                'Оставлять отзыв на одно произведение дважды запрещено!'
+            )
+        return data
+
+    def check_score(self, value):
+        if value in range(1, 11):
+            return value
+        raise serializers.ValidationError(
+            'Оценка не входит в предложенный диапазон.'
+        )
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
