@@ -1,4 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import PermissionDenied
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -11,15 +13,16 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from reviews.models import Category, Genre, Title, User
+from reviews.models import Category, Genre, Review, Title, User
 from reviews.uttils import send_confirmation_code
+
 from .filters import TitleFilter
 from .permissions import IsAdmin, IsRoleAdmin
 from .serializers import (AdminUserSerializer, CategorySerializer,
-                          GenreSerializer, SignupSerializer,
-                          TitleReadSerializer, TitleWriteSerializer,
-                          TokenSerializer, UserSerializer)
+                          CommentSerializer, GenreSerializer, ReviewSerializer,
+                          SignupSerializer, TitleReadSerializer,
+                          TitleWriteSerializer, TokenSerializer,
+                          UserSerializer)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -61,7 +64,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(Avg('reviews__score'))
     permission_classes = (IsAuthenticatedOrReadOnly, IsAdmin)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
@@ -123,3 +126,56 @@ class Token(APIView):
         token = RefreshToken.for_user(user)
         return Response({'token': str(token.access_token)},
                         status=status.HTTP_200_OK)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        serializer.save(author=self.request.user, title=title)
+
+    def perform_update(self, serializer):
+        if serializer.instance.author != self.request.user:
+            raise PermissionDenied('Изменение чужого отзыва запрещено!')
+        super(ReviewViewSet, self).perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if not (instance.author == self.request.user
+                or self.request.user.is_moderator):
+            raise PermissionDenied('Удаление чужого отзыва запрещено!')
+        super(ReviewViewSet, self).perform_destroy(instance)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        review_id = self.kwargs.get('review_id')
+        title_id = self.kwargs.get('title_id')
+        review = get_object_or_404(Review, pk=review_id, title__pk=title_id)
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review_id = self.kwargs.get('review_id')
+        new_review = get_object_or_404(Review, pk=review_id)
+        serializer.save(author=self.request.user, review=new_review)
+
+    def perform_update(self, serializer):
+        if serializer.instance.author != self.request.user:
+            raise PermissionDenied('Изменение чужого комментария запрещено!')
+        super(CommentViewSet, self).perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if not (instance.author == self.request.user
+                or self.request.user.is_moderator):
+            raise PermissionDenied('Удаление чужого комментария запрещено!')
+        super(CommentViewSet, self).perform_destroy(instance)

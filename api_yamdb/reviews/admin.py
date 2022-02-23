@@ -1,7 +1,7 @@
+from api_yamdb.settings import EMPTY
 from django.contrib import admin
 
-from api_yamdb.settings import EMPTY
-from .models import Category, Genre, Title, User
+from .models import Category, Comment, Genre, Review, Title, User
 
 
 @admin.register(Category)
@@ -37,3 +37,5 @@ class TitleAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User)
+admin.site.register(Review)
+admin.site.register(Comment)
