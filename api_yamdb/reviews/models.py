@@ -1,4 +1,7 @@
+import datetime
+
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 USER_ROLE = (
@@ -8,6 +11,11 @@ USER_ROLE = (
 )
 
 
+# Не понял по поводу поля first__name "если аргументу присваивается
+# дефолтное значение, то принято его пропускать". Для CharField в документации
+# написано по дефолту max_length=None а у нас по redoc 150, blank=True у нас
+# а по дефолту False, но тогда поле будет required, у нас в документации нет.
+# Поясни пожалуйста что имелось ввиду этим замечанием.
 class User(AbstractUser):
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(max_length=254, unique=True)
@@ -17,7 +25,7 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
-    role = models.CharField(max_length=9, choices=USER_ROLE, default='user')
+    role = models.CharField(max_length=30, choices=USER_ROLE, default='user')
 
     @property
     def is_admin(self):
@@ -30,9 +38,7 @@ class User(AbstractUser):
 
 class Category(models.Model):
     name = models.CharField('Название категории', max_length=256)
-    slug = models.SlugField(
-        'Адрес в URL - category/', max_length=50, unique=True
-    )
+    slug = models.SlugField('Адрес в URL - category/', unique=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -45,9 +51,7 @@ class Category(models.Model):
 
 class Genre(models.Model):
     name = models.CharField('Название жанра', max_length=256)
-    slug = models.SlugField(
-        'Адрес в URL - genres/', max_length=50, unique=True
-    )
+    slug = models.SlugField('Адрес в URL - genres/', unique=True)
 
     class Meta:
         verbose_name = 'Жанр'
@@ -60,7 +64,14 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.CharField('Название произведения', max_length=100)
-    year = models.IntegerField('Дата выхода произведения')
+    year = models.PositiveIntegerField(
+        'Дата выхода произведения',
+        db_index=True,
+        validators=(
+            MinValueValidator(1500),
+            MaxValueValidator(datetime.date.today().year)
+        ),
+    )
     rating = models.IntegerField('Рейтинг', null=True)
     description = models.CharField(
         'Описание произведения', max_length=1000, null=True,
@@ -101,7 +112,13 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='Автор отзыва',
     )
-    score = models.IntegerField('Оценка произведения')
+    score = models.IntegerField(
+        'Оценка произведения',
+        validators=(
+            MinValueValidator(1),
+            MaxValueValidator(10)
+        ),
+    )
     pub_date = models.DateTimeField(
         'Дата публикации',
         auto_now_add=True,
@@ -112,7 +129,7 @@ class Review(models.Model):
         verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'title'],
+                fields=('author', 'title'),
                 name='unique_author_title'
             )
         ]

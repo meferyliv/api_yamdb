@@ -31,7 +31,7 @@ class CustomCategoryGenreRouter(DefaultRouter):
 
 
 router = SimpleRouter()
-router.register('users', UsersViewSet)
+router.register('users', UsersViewSet, basename='users')
 router_titles_v1 = DefaultRouter()
 router_category_genre_v1 = CustomCategoryGenreRouter()
 router_category_genre_v1.register(
