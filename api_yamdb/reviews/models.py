@@ -1,8 +1,8 @@
-import datetime
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
+from .validators import current_year_validator
 
 USER_ROLE = (
     ('user', 'user'),
@@ -11,11 +11,6 @@ USER_ROLE = (
 )
 
 
-# Не понял по поводу поля first__name "если аргументу присваивается
-# дефолтное значение, то принято его пропускать". Для CharField в документации
-# написано по дефолту max_length=None а у нас по redoc 150, blank=True у нас
-# а по дефолту False, но тогда поле будет required, у нас в документации нет.
-# Поясни пожалуйста что имелось ввиду этим замечанием.
 class User(AbstractUser):
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(max_length=254, unique=True)
@@ -69,7 +64,7 @@ class Title(models.Model):
         db_index=True,
         validators=(
             MinValueValidator(1500),
-            MaxValueValidator(datetime.date.today().year)
+            current_year_validator
         ),
     )
     rating = models.IntegerField('Рейтинг', null=True)
